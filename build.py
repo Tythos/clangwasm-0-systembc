@@ -5,6 +5,7 @@ import os
 import csv
 import sys
 import subprocess
+import warnings
 
 MOD_PATH, _ = os.path.split(os.path.abspath(__file__))
 
@@ -31,7 +32,7 @@ def compile(emscriptenSystemPath, fromFile, toFile):
     * LIBCXX (also filtered against MUSL) are matched against *.CPP and also require unique build flags
     """
     CLANG_FLAGS = "-triple wasm32-unknown-emscripten -emit-obj -fcolor-diagnostics"
-    CLANG_FLAGS += " -isystem\"%s/lib/libcxx/include\"" % emscriptenSystemPath
+    # CLANG_FLAGS += " -isystem\"%s/lib/libcxx/include\"" % emscriptenSystemPath
     CLANG_FLAGS += " -isystem\"%s/include/compat\"" % emscriptenSystemPath
     CLANG_FLAGS += " -isystem\"%s/include\"" % emscriptenSystemPath
     CLANG_FLAGS += " -isystem\"%s/lib/libc/musl/include\"" % emscriptenSystemPath
@@ -52,7 +53,6 @@ def compile(emscriptenSystemPath, fromFile, toFile):
     CXX_FLAGS = "-x c++ -Os -std=c++11 -fno-threadsafe-statics -fno-rtti -I\"%s/lib/libcxxabi/include\"" % emscriptenSystemPath
     CXX_FLAGS += " -DNDEBUG -D_LIBCPP_BUILDING_LIBRARY -D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS"
     objPath = MOD_PATH + "/obj"
-    print("COMPILING %s => %s" % (fromFile, toFile))
     if not os.path.isdir(objPath):
         os.mkdir(objPath)
     if "libc/musl/" in fromFile or "pthread/" in fromFile:
@@ -61,13 +61,11 @@ def compile(emscriptenSystemPath, fromFile, toFile):
         allArgs += MUSL_FLAGS.split(" ")
         allArgs += CLANG_FLAGS.split(" ")
         allArgs += ["-o", toFile, '"%s/%s"' % (emscriptenSystemPath, fromFile)]
-        subprocess.Popen(allArgs).communicate()
     elif fromFile.endswith(".c") and "pthread/" not in fromFile and "libc/musl/" not in fromFile:
         allArgs = ["clang", "-cc1"]
         allArgs += C_FLAGS.split(" ")
         allArgs += CLANG_FLAGS.split(" ")
         allArgs += ["-o", toFile, '"%s/%s"' % (emscriptenSystemPath, fromFile)]
-        subprocess.Popen(allArgs).communicate()
     elif fromFile.endswith(".cpp") and "pthread/" not in fromFile and "libc/musl/" not in fromFile:
         allArgs = ["clang", "-cc1"]
         allArgs += CXX_FLAGS.split(" ")
@@ -75,22 +73,31 @@ def compile(emscriptenSystemPath, fromFile, toFile):
         allArgs += ["-o", toFile, '"%s/%s"' % (emscriptenSystemPath, fromFile)]
     else:
         raise Exception("File '%s' did not match any known build mode" % fromFile)
+    # print(" ".join(allArgs))
+    _, stderr = subprocess.Popen(" ".join(allArgs), stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    if len(stderr) > 0:
+        print("\n*** ERROR :::\n")
+        print(stderr.decode())
+        # warnings.warn(stderr)
+        exit()
 
 def main(emscriptenSystemPath):
     """
     """
     emscriptenSystemPath = emscriptenSystemPath.replace("\\", "/")
     bg = getBuildGraph()
-    for edge in bg:
-        if edge is not bg[1]:
-            continue
+    for i, edge in enumerate(bg):
+        # if edge is not bg[1]:
+        #     continue
         action = edge[1]
         if action == "IGNORE":
-            pass
+            print("%u. IGNORING %s..." % (i+1, edge[0]))
         elif action == "COMPILE":
+            print("(%u/%u). COMPILING %s => %s..." % (i+1, len(bg), edge[0], edge[2]))
             compile(emscriptenSystemPath, edge[0], edge[2])
         else:
             raise Exception("Unsupported action '%s'" % action)
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    # main(sys.argv[1])
+    main("C:\\Users\\BRIANK~1\\Projects\\emscripten\\system")
