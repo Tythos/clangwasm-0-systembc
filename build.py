@@ -42,8 +42,8 @@ def compile(emscriptenSystemPath, fromFile, toFile):
     CLANG_FLAGS += " -mconstructor-aliases"
     CLANG_FLAGS += " -fvisibility hidden -fno-threadsafe-statics -fgnuc-version=4.2.1"
     CLANG_FLAGS += " -D__EMSCRIPTEN__ -D_LIBCPP_ABI_VERSION=2"
-    C_FLAGS = "-x c -Os -std=gnu11 -fno-threadsafe-statics -fno-builtin"
-    C_FLAGS += " -DNDEBUG -Dunix -D__unix -D__unix__ -D_XOPEN_SOURCE"
+    C_FLAGS = "-Ofast -std=gnu99 -fno-threadsafe-statics"
+    C_FLAGS += " -DNDEBUG -Dunix -D__unix -D__unix__"
     C_FLAGS += " -Wno-dangling-else -Wno-ignored-attributes -Wno-bitwise-op-parentheses -Wno-logical-op-parentheses -Wno-shift-op-parentheses"
     C_FLAGS += " -Wno-string-plus-int -Wno-unknown-pragmas -Wno-ignored-pragmas -Wno-shift-count-overflow -Wno-return-type -Wno-macro-redefined"
     C_FLAGS += " -Wno-unused-result -Wno-pointer-sign -Wno-implicit-function-declaration -Wno-int-conversion"
@@ -99,5 +99,4 @@ def main(emscriptenSystemPath):
             raise Exception("Unsupported action '%s'" % action)
 
 if __name__ == "__main__":
-    # main(sys.argv[1])
-    main("C:\\Users\\BRIANK~1\\Projects\\emscripten\\system")
+    main(sys.argv[1])
